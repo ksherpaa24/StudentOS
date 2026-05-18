@@ -3,314 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StudentOS | Secure Login</title>
+    <title>StudentOS | Academic Ecosystem</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("9YGSyDIN23hMn8Y7t");
+        })();
+    </script>
+
     <style>
         :root {
-            --sidebar-bg: #ffffff;
-            --main-bg: #f8f9fa;
-            --accent-purple: #6366f1;
-            --text-dark: #1e293b;
-            --text-light: #64748b;
-            --card-bg: #ffffff;
-            --border: #e2e8f0;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --sidebar-bg: #ffffff; --main-bg: #fdfdff; --accent-purple: #6366f1;
+            --text-dark: #1e293b; --text-light: #64748b; --border: #f1f5f9;
+            --success: #22c55e; --danger: #ef4444; --card-shadow: 0 4px 20px rgba(0,0,0,0.04);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: var(--main-bg); color: var(--text-dark); overflow: hidden; height: 100vh; }
 
-        /* --- AUTHENTICATION STYLES --- */
-        #auth-overlay {
-            position: fixed;
-            inset: 0;
-            background: #ffffff;
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .auth-card {
-            width: 100%;
-            max-width: 400px;
-            padding: 2.5rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .auth-logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--accent-purple);
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
+        /* --- AUTH --- */
+        #auth-overlay { position: fixed; inset: 0; background: #ffffff; z-index: 2000; display: flex; align-items: center; justify-content: center; transition: 0.6s ease; }
+        .auth-card { width: 100%; max-width: 400px; padding: 2.5rem; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; }
         .input-group { text-align: left; margin-bottom: 1rem; }
-        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px; }
-        .input-group input { 
-            width: 100%; padding: 12px; border: 1px solid var(--border); 
-            border-radius: 10px; outline: none; font-size: 0.9rem;
-        }
+        .input-group label { display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 5px; color: var(--text-light); }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; outline: none; font-size: 0.9rem; }
+        .auth-btn { width: 100%; background: var(--accent-purple); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; }
 
-        .auth-btn { 
-            width: 100%; background: var(--accent-purple); color: white; border: none; 
-            padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; margin-top: 10px;
-        }
+        /* --- LAYOUT --- */
+        #app-container { display: flex; height: 100vh; width: 100vw; opacity: 0; transition: 0.5s; }
+        aside { width: 260px; background: white; border-right: 1px solid var(--border); padding: 2rem 1.5rem; display: flex; flex-direction: column; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-radius: 12px; cursor: pointer; color: var(--text-light); margin-bottom: 5px; font-weight: 500; transition: 0.2s; }
+        .nav-item:hover { background: #f8fafc; color: var(--text-dark); }
+        .nav-item.active { background: #eef2ff; color: var(--accent-purple); font-weight: 600; }
 
-        .toggle-text { margin-top: 1rem; font-size: 0.85rem; color: var(--text-light); }
-        .toggle-text span { color: var(--accent-purple); cursor: pointer; font-weight: 600; }
-
-        /* --- DASHBOARD STYLES --- */
-        #app-container { display: flex; height: 100vh; width: 100vw; opacity: 0; transition: opacity 0.5s ease; }
-
-        aside { width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; z-index: 20; }
-        .logo { font-weight: 800; color: var(--accent-purple); font-size: 1.2rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 8px; }
-        .nav-section { margin-bottom: 1.5rem; }
-        .nav-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-light); margin-bottom: 0.5rem; font-weight: 700; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: var(--text-dark); font-size: 0.9rem; margin-bottom: 4px; transition: 0.2s; cursor: pointer; }
-        .nav-item:hover { background: #f1f5f9; }
-        .nav-item.active { background-color: #eeeffe; color: var(--accent-purple); font-weight: 600; }
-
-        .content-container { flex-grow: 1; display: flex; flex-direction: column; position: relative; height: 100vh; }
-        .top-nav { height: 60px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; }
-        .search-bar { background: #f1f5f9; border: none; padding: 8px 16px; border-radius: 20px; width: 300px; outline: none; }
-        
+        .content-container { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background: #f8fafc; }
+        .top-nav { height: 70px; background: white; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; }
         main { flex-grow: 1; padding: 2rem; overflow-y: auto; }
-        .view { display: none; animation: fadeIn 0.3s ease; }
-        .view.active { display: block; }
 
+        /* --- CARDS & GRID --- */
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+        .card { background: white; padding: 20px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--card-shadow); }
+        .item-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .item-card { background: white; padding: 20px; border-radius: 15px; border: 1px solid var(--border); transition: 0.3s; }
+        .item-card:hover { transform: translateY(-5px); box-shadow: var(--card-shadow); }
+        
+        .buy-btn { width: 100%; padding: 10px; border-radius: 8px; border: none; background: #eef2ff; color: var(--accent-purple); font-weight: 700; cursor: pointer; margin-top: 15px; }
+        .buy-btn:hover { background: var(--accent-purple); color: white; }
+
+        /* --- MODALS --- */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 3000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 2rem; border-radius: 20px; width: 400px; }
+
+        .view { display: none; }
+        .view.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .stat-card { background: white; padding: 1.2rem; border-radius: 12px; border: 1px solid var(--border); }
-        .bento-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; }
-        .card { background: white; border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border); margin-bottom: 1.5rem; }
-        .btn-primary { background: var(--accent-purple); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .progress-container { height: 8px; background: #f1f5f9; border-radius: 10px; margin: 10px 0; }
-        .progress-bar { height: 100%; border-radius: 10px; transition: width 1s ease-in-out; }
-        .list-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f8fafc; }
-        input[type="text"], input[type="password"], textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <div class="auth-logo"><i class="fas fa-graduation-cap"></i> StudentOS</div>
-            
+            <h1 style="color:var(--accent-purple); margin-bottom:1rem;"><i class="fas fa-graduation-cap"></i> StudentOS</h1>
             <div id="login-fields">
-                <h2 style="margin-bottom: 5px;">Welcome back</h2>
-                <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 1.5rem;">Sign in to your campus workspace</p>
-                <div class="input-group">
-                    <label>University Email</label>
-                    <input type="text" id="loginEmail" placeholder="aryan@university.edu">
-                </div>
-                <div class="input-group">
-                    <label>Password</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••">
-                </div>
-                <button class="auth-btn" onclick="handleLogin()">Sign In</button>
-                <p class="toggle-text">New here? <span onclick="toggleAuth(true)">Create an account</span></p>
+                <h2>Welcome back</h2>
+                <div class="input-group"><label>University Email</label><input type="text" id="loginEmail" placeholder="name@university.edu.in"></div>
+                <div class="input-group"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+                <button class="auth-btn" onclick="requestOTP('login')">Sign In</button>
+                <p style="margin-top:1rem; font-size:0.8rem;">New here? <span style="color:var(--accent-purple); cursor:pointer; font-weight:600;" onclick="toggleAuth(true)">Create Account</span></p>
             </div>
-
             <div id="signup-fields" style="display: none;">
-                <h2 style="margin-bottom: 5px;">Create Account</h2>
-                <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 1.5rem;">Start your StudentOS journey</p>
-                <div class="input-group">
-                    <label>Full Name</label>
-                    <input type="text" id="signupName" placeholder="Aryan Sharma">
-                </div>
-                <div class="input-group">
-                    <label>University Email</label>
-                    <input type="text" id="signupEmail" placeholder="aryan@university.edu">
-                </div>
-                <div class="input-group">
-                    <label>Create Password</label>
-                    <input type="password" id="signupPassword" placeholder="••••••••">
-                </div>
-                <button class="auth-btn" onclick="handleSignup()">Create Account</button>
-                <p class="toggle-text">Already have an account? <span onclick="toggleAuth(false)">Log in</span></p>
+                <h2>Join StudentOS</h2>
+                <div class="input-group"><label>Full Name</label><input type="text" id="signupName" placeholder="Karma Hissey Sherpa"></div>
+                <div class="input-group"><label>College Name</label><input type="text" id="signupCollege" placeholder="Sikkim Manipal Institute"></div>
+                <div class="input-group"><label>Email</label><input type="text" id="signupEmail" placeholder="name@uni.edu"></div>
+                <div class="input-group"><label>Password</label><input type="password" id="signupPassword" placeholder="••••••••"></div>
+                <button class="auth-btn" onclick="requestOTP('signup')">Register</button>
+            </div>
+            <div id="otp-fields" style="display: none;">
+                <h2>OTP Check</h2>
+                <input type="text" id="otpInput" placeholder="4-digit OTP" style="width:100%; padding:12px; text-align:center; font-size:1.5rem; letter-spacing:10px; border:1px solid #ddd; border-radius:10px;">
+                <button class="auth-btn" style="margin-top:15px;" onclick="verifyOTP()">Verify</button>
             </div>
         </div>
     </div>
 
     <div id="app-container">
         <aside>
-            <div class="logo"><i class="fas fa-graduation-cap"></i> StudentOS</div>
-            <div class="nav-section">
-                <p class="nav-label">Modules</p>
-                <div class="nav-item active" onclick="showView('dashboard')"><i class="fas fa-th-large"></i> Dashboard</div>
-                <div class="nav-item" onclick="showView('notes')"><i class="fas fa-book"></i> Notes Hub</div>
-                <div class="nav-item" onclick="showView('skills')"><i class="fas fa-chart-line"></i> Skill Gap</div>
-                <div class="nav-item" onclick="showView('market')"><i class="fas fa-store"></i> Marketplace</div>
-            </div>
-            <div class="nav-section">
-                <p class="nav-label">Account</p>
-                <div class="nav-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
-            </div>
+            <div style="font-weight:900; font-size:1.4rem; color:var(--accent-purple); margin-bottom:2.5rem;"><i class="fas fa-graduation-cap"></i> StudentOS</div>
+            <p style="font-size:0.7rem; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:10px;">Modules</p>
+            <div class="nav-item active" onclick="showView('dashboard')"><i class="fas fa-th-large"></i> Dashboard</div>
+            <div class="nav-item" onclick="showView('notes')"><i class="fas fa-book-open"></i> Notes Hub</div>
+            <div class="nav-item" onclick="showView('skillgap')"><i class="fas fa-bolt"></i> Skill Gap</div>
+            <div class="nav-item" onclick="showView('marketplace')"><i class="fas fa-store"></i> Marketplace</div>
+            <div class="nav-item" style="margin-top:auto;" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
         </aside>
 
         <div class="content-container">
             <header class="top-nav">
-                <input type="text" class="search-bar" id="globalSearch" placeholder="Search across StudentOS..." onkeyup="searchHandler()">
-                <div style="display: flex; gap: 20px; align-items: center;">
-                    <i class="far fa-bell" style="cursor: pointer;"></i>
-                    <div id="userCircle" style="background: #6366f1; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">AR</div>
-                </div>
+                <div id="navCollege" style="font-weight:700; color:var(--text-light); font-size:0.85rem;">UNIVERSITY PORTAL</div>
+                <div id="userCircle" onclick="showView('profile')" style="background:var(--accent-purple); color:white; width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:bold;">KS</div>
             </header>
 
             <main>
                 <section id="dashboard" class="view active">
-                    <div style="margin-bottom: 2rem;">
-                        <h1 id="greetingText">Good morning 👋</h1>
-                        <p style="color: var(--text-light)">You have <span id="taskCount">3</span> active deadlines today.</p>
+                    <h1 id="greetingText" style="font-size:2rem; font-weight:800;">Good morning, Karma 👋</h1>
+                    <div class="grid-3" style="margin-top:2rem;">
+                        <div class="card"><h4>Attendance</h4><p style="font-size:1.8rem; font-weight:800;">82%</p></div>
+                        <div class="card"><h4>Wallet</h4><p style="font-size:1.8rem; font-weight:800;">₹2,800</p></div>
+                        <div class="card"><h4>Streak</h4><p style="font-size:1.8rem; font-weight:800;">12 Days</p></div>
                     </div>
+                </section>
 
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <p class="nav-label">Attendance</p>
-                            <p style="font-size: 1.5rem; font-weight: 800;">82%</p>
-                            <p style="font-size: 0.75rem; color: var(--success)">+2% from last week</p>
-                        </div>
-                        <div class="stat-card">
-                            <p class="nav-label">Wallet</p>
-                            <p style="font-size: 1.5rem; font-weight: 800;" id="walletAmt">₹2,800</p>
-                            <p style="font-size: 0.75rem; color: var(--text-light)">Left for May</p>
-                        </div>
-                        <div class="stat-card">
-                            <p class="nav-label">Study Streak</p>
-                            <p style="font-size: 1.5rem; font-weight: 800;">12 Days</p>
-                            <p style="font-size: 0.75rem; color: var(--danger)">🔥 On fire!</p>
-                        </div>
+                <section id="notes" class="view">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                        <h1>Notes Hub</h1>
+                        <button class="auth-btn" style="width:auto; padding:10px 20px;" onclick="openModal('notesModal')"><i class="fas fa-upload"></i> Upload My Notes</button>
                     </div>
-
-                    <div class="bento-grid">
-                        <div class="card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                <h3>Deadlines</h3>
-                                <button class="btn-primary" onclick="addTask()" style="padding: 4px 10px; font-size: 0.7rem;">+ Add</button>
-                            </div>
-                            <div id="deadlineList">
-                                <div class="list-item">
-                                    <input type="checkbox" onchange="completeTask(this)" style="margin-right: 15px;">
-                                    <div style="flex-grow: 1;">
-                                        <p style="font-weight: 600; font-size: 0.9rem;">OS Assignment #3</p>
-                                        <p style="font-size: 0.75rem; color: var(--danger);">Due 11:59 PM</p>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="grid-3">
+                        <select class="input-group"><option>B.Tech CSE</option><option>BCA</option></select>
+                        <select class="input-group"><option>3rd Year</option><option>2nd Year</option></select>
+                        <select class="input-group"><option>Semester 6</option><option>Semester 5</option></select>
+                    </div>
+                    <div class="item-list">
+                        <div class="item-card">
+                            <h3>Data Structures</h3>
+                            <p style="color:var(--text-light); font-size:0.8rem;">By Andronicus Lepcha</p>
+                            <button class="buy-btn"><i class="fas fa-download"></i> Download</button>
                         </div>
-                        <div class="card">
-                            <h3>Quick Budget</h3>
-                            <div style="margin-top: 1rem;">
-                                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px;">
-                                    <span>Food & Coffee</span>
-                                    <span id="foodVal">₹1,440 / ₹2,000</span>
-                                </div>
-                                <div class="progress-container"><div class="progress-bar" id="foodBar" style="width: 72%; background: var(--accent-purple);"></div></div>
-                            </div>
-                            <button onclick="logExpense()" style="width: 100%; margin-top: 1rem; background: none; border: 1px dashed var(--border); padding: 8px; border-radius: 8px; cursor: pointer; color: var(--text-light);">+ Log an expense</button>
+                        <div class="item-card">
+                            <h3>Operating Systems</h3>
+                            <p style="color:var(--text-light); font-size:0.8rem;">By Sushankhya Rai</p>
+                            <button class="buy-btn"><i class="fas fa-download"></i> Download</button>
                         </div>
                     </div>
                 </section>
 
-                <section id="notes" class="view"><h2>Notes Hub</h2></section>
-                <section id="skills" class="view"><h2>Skill Gap</h2></section>
-                <section id="market" class="view"><h2>Marketplace</h2></section>
+                <section id="marketplace" class="view">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                        <h1>Marketplace</h1>
+                        <button class="auth-btn" style="width:auto; padding:10px 20px;" onclick="openModal('marketModal')">+ Add Listing</button>
+                    </div>
+                    <div class="item-list" id="marketList">
+                        <div class="item-card">
+                            <div style="height:100px; background:#f1f5f9; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; justify-content:center;"><i class="fas fa-laptop fa-2x"></i></div>
+                            <h3>Drawing Board Set</h3>
+                            <p style="font-weight:800; color:var(--accent-purple);">₹450</p>
+                            <button class="buy-btn" onclick="alert('Contacting Seller...')">Buy Now</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="skillgap" class="view">
+                    <h1>Skill Gap</h1>
+                    <div class="card" style="margin-top:1.5rem;">
+                        <h3>Syllabus vs Industry</h3>
+                        <p style="color:var(--text-light);">We've analyzed your B.Tech CSE curriculum.</p>
+                        <div style="background:#fef2f2; color:var(--danger); padding:15px; border-radius:10px; margin-top:15px; font-weight:600;">Missing: Cloud Architecture (AWS/Azure)</div>
+                    </div>
+                </section>
+
+                <section id="profile" class="view">
+                    <div class="card" style="max-width:500px;">
+                        <div style="display:flex; align-items:center; gap:20px; margin-bottom:2rem;">
+                            <div style="width:80px; height:80px; background:var(--accent-purple); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800;">KS</div>
+                            <div>
+                                <h2 id="profName">Karma Hissey Sherpa</h2>
+                                <p id="profEmail" style="color:var(--text-light);">karma@university.edu.in</p>
+                            </div>
+                        </div>
+                        <div style="border-top:1px solid var(--border); padding-top:1.5rem;">
+                            <p><strong>University:</strong> <span id="profCollege">Sikkim Manipal Institute</span></p>
+                            <p style="margin-top:10px; color:var(--success);"><i class="fas fa-check-double"></i> Verified Identity</p>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
     </div>
 
+    <div id="notesModal" class="modal"><div class="modal-content"><h3>Upload Notes</h3><div class="input-group"><label>Subject</label><input type="text"></div><div class="input-group"><label>File</label><input type="file"></div><button class="auth-btn" onclick="closeModal('notesModal')">Upload</button></div></div>
+    <div id="marketModal" class="modal"><div class="modal-content"><h3>New Listing</h3><div class="input-group"><label>Item</label><input type="text" id="mItem"></div><div class="input-group"><label>Price (₹)</label><input type="number" id="mPrice"></div><button class="auth-btn" onclick="addMarketItem()">Post</button></div></div>
+
     <script>
-        /* --- AUTHENTICATION & STORAGE LOGIC --- */
-        
-        function toggleAuth(isSignup) {
-            document.getElementById('login-fields').style.display = isSignup ? 'none' : 'block';
-            document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
+        let genOTP = null;
+        let pUser = { name: "Karma Hissey Sherpa", college: "Sikkim Manipal Institute", email: "karma@university.edu.in" };
+
+        function toggleAuth(isS) {
+            document.getElementById('login-fields').style.display = isS ? 'none' : 'block';
+            document.getElementById('signup-fields').style.display = isS ? 'block' : 'none';
         }
 
-        // SIGN UP: Save to LocalStorage
-        function handleSignup() {
-            const name = document.getElementById('signupName').value;
-            const email = document.getElementById('signupEmail').value;
-            const pass = document.getElementById('signupPassword').value;
-
-            if(!name || !email || !pass) {
-                alert("Please fill all fields to register.");
-                return;
-            }
-
-            // Create user object
-            const userData = { name: name, email: email, password: pass };
+        async function requestOTP(mode) {
+            genOTP = Math.floor(1000 + Math.random() * 9000);
+            const email = (mode === 'login') ? document.getElementById('loginEmail').value : document.getElementById('signupEmail').value;
             
-            // Store in LocalStorage using email as the unique key
-            localStorage.setItem(email, JSON.stringify(userData));
-            
-            alert("Account created successfully! You can now log in.");
-            toggleAuth(false); // Switch to login screen
+            emailjs.send('service_p9mpb5c', 'template_rgeyb3x', { to_email: email, otp_code: genOTP, user_name: pUser.name })
+                .then(() => {
+                    alert("OTP Sent!");
+                    document.getElementById('login-fields').style.display='none';
+                    document.getElementById('signup-fields').style.display='none';
+                    document.getElementById('otp-fields').style.display='block';
+                }, (e) => alert("Error: Check EmailJS"));
         }
 
-        // LOGIN: Verify from LocalStorage
-        function handleLogin() {
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPassword').value;
-
-            // Fetch stored data
-            const storedData = localStorage.getItem(email);
-
-            if (!storedData) {
-                alert("No account found with this email. Please sign up first.");
-                return;
-            }
-
-            const user = JSON.parse(storedData);
-
-            // Check Password
-            if (user.password === pass) {
-                enterApp(user.name);
-            } else {
-                alert("Incorrect password. Please try again.");
-            }
+        function verifyOTP() {
+            if(document.getElementById('otpInput').value == genOTP) {
+                document.getElementById('auth-overlay').style.transform = 'translateY(-100%)';
+                document.getElementById('app-container').style.opacity = '1';
+                document.getElementById('navCollege').innerText = pUser.college.toUpperCase();
+            } else { alert("Wrong OTP"); }
         }
 
-        function enterApp(displayName) {
-            // Update Dashboard UI
-            document.getElementById('greetingText').innerText = `Good morning, ${displayName} 👋`;
-            document.getElementById('userCircle').innerText = displayName.substring(0, 2).toUpperCase();
-
-            // Reveal Dashboard
-            document.getElementById('auth-overlay').style.transform = 'translateY(-100%)';
-            document.getElementById('app-container').style.opacity = '1';
-        }
-
-        function logout() {
-            document.getElementById('auth-overlay').style.transform = 'translateY(0)';
-            document.getElementById('app-container').style.opacity = '0';
-            // Clear inputs
-            document.getElementById('loginEmail').value = "";
-            document.getElementById('loginPassword').value = "";
-        }
-
-        /* --- DASHBOARD LOGIC --- */
-        function showView(viewId) {
+        function showView(vId) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            document.getElementById(vId).classList.add('active');
+            
+            // Find nav item by icon or text to highlight
+            const items = document.querySelectorAll('.nav-item');
+            items.forEach(i => { if(i.innerText.toLowerCase().includes(vId.substring(0,3))) i.classList.add('active'); });
         }
 
-        // ... other existing functions (addTask, logExpense, searchHandler) remain the same
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function addMarketItem() {
+            const item = document.getElementById('mItem').value;
+            const price = document.getElementById('mPrice').value;
+            const html = `<div class="item-card"><h3>${item}</h3><p style="font-weight:800; color:var(--accent-purple);">₹${price}</p><button class="buy-btn">Buy Now</button></div>`;
+            document.getElementById('marketList').innerHTML += html;
+            closeModal('marketModal');
+        }
+
+        function logout() { location.reload(); }
     </script>
 </body>
 </html>
